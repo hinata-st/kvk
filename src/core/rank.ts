@@ -31,6 +31,29 @@ export function normalizedScore(score: number, rankMaxes: readonly number[]): nu
   return (score / top) * 100;
 }
 
+/**
+ * 段位进度：整数部分是已达段位，小数部分是往下一段位走了多少。
+ *
+ * 雷达图每根轴问的是「你现在在哪一级」，需要连续值——同一张图上 4.2 和 4.8 得画得出来，
+ * 光用 rankForScore 的话它们都是 4，会长成一模一样。上限就是段位总数（顶到最高段位）。
+ * 没有阈值（官方没给）时返回 null，调用方自己决定是跳过还是当 0。
+ */
+export function rankProgress(score: number, rankMaxes: readonly number[]): number | null {
+  const first = rankMaxes[0];
+  if (first === undefined || first <= 0) return null;
+  // 连第一段的门槛都没到，就按「从圆心走到第一环」的比例算
+  if (score < first) return Math.max(0, score / first);
+  for (let i = rankMaxes.length - 1; i >= 0; i--) {
+    const lower = rankMaxes[i]!;
+    if (score < lower) continue;
+    const next = rankMaxes[i + 1];
+    // 已经是最高段位，没有下一格可以量进度
+    if (next === undefined || next <= lower) return i + 1;
+    return i + 1 + (score - lower) / (next - lower);
+  }
+  return 0;
+}
+
 /** 距离目标等级还差多少分。已经达到或超过则返回 0。 */
 export function pointsToTarget(
   score: number,

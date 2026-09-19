@@ -35,8 +35,8 @@ npm run dev       # 打开 http://localhost:5173
 
 ## 页面
 
-- **主页** — 今天（训练量进度与游戏时间、今天的计划、明天）、整个 benchmark 的分数段位表（高亮当前大组，每行可以 `▶` 直接进游戏、`add` 加进今天），下面接当天计划里的场景分数曲线，再下面是大组对比图
-- **场景详情** — 单个场景的完整曲线和逐局明细，X 轴可切按局 / 按次训练 / 按天
+- **主页** — 今天（训练量进度与游戏时间、今天的计划、明天）、整个 benchmark 的分数段位表（高亮当前大组，每行可以 `▶` 直接进游戏、`add` 加进今天），下面接当天计划里的场景分数曲线（标题旁标着这条曲线首尾的变化），再下面是段位雷达，见 [ADR-0008](docs/adr/0008-radar-compare.md)
+- **场景详情** — 单个场景的完整曲线和逐局明细，X 轴可切按局 / 按次训练 / 按天，标题旁的百分比跟着粒度走
 - **日历** — 月视图，看训练量和计划，也可以往前排
 - **设置** — stats 目录、TopScores.sav、当前 benchmark、目标等级、每日训练量、大组分组
 
@@ -60,6 +60,7 @@ npm run dev       # 打开 http://localhost:5173
 | `npm run verify` | 拿真实 stats 目录 + 官方接口 + TopScores.sav 三方交叉验证 |
 | `npm run smoke` | 端到端冒烟：真实数据 + 真实 benchmark 目录，打印推进引擎的输出 |
 | `npm run check-schedule` | 自动排程规则的纯函数断言 |
+| `npm run check-radar` | 段位进度、首尾变化、雷达轴划分的纯函数断言 |
 | `npm run scan` | 扫 benchmarkId 区间，写 `public/benchmark-directory.json` |
 | `npm run catalog` | 抽 evxl 的 benchmark 目录，写 `public/benchmark-catalog.json` |
 

@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react';
 
-import { dayKey, formatSpan, gameSeconds, scenarioSeries, shiftDay, type Grain } from '../../core/aggregate';
+import {
+  dayKey,
+  formatSpan,
+  gameSeconds,
+  scenarioSeries,
+  seriesChangePct,
+  shiftDay,
+  type Grain,
+} from '../../core/aggregate';
 import { scenarioLaunchUrl } from '../../core/launch';
 import { rankForScore } from '../../core/rank';
 import type { Run } from '../../core/types';
@@ -9,7 +17,8 @@ import type { EChartsOption, SeriesOption } from 'echarts';
 
 import { EChart } from '../EChart';
 import { BenchmarkTable } from '../BenchmarkTable';
-import { CATEGORY_PALETTE, CategoryCompareChart } from '../CategoryCompareChart';
+import { ChangeBadge } from '../ChangeBadge';
+import { CompareRadar } from '../CompareRadar';
 import { seriesDataFor, tooltipFor, xAxisFor } from '../scoreAxis';
 
 const GRAIN_LABELS: { value: Grain; label: string }[] = [
@@ -145,6 +154,15 @@ export function HomePage({ onOpenScenario }: { onOpenScenario: (scenario: string
 
   /** 今天的计划里已经有哪些场景，用来把「加到今天」变成「已加入」 */
   const plannedToday = useMemo(() => new Set(todayPlan.map((entry) => entry.scenario)), [todayPlan]);
+
+  /** 今天这些场景的曲线首尾变化，标在每张小图的标题旁边 */
+  const plannedChange = useMemo(() => {
+    const map = new Map<string, number | null>();
+    for (const name of plannedScenarios) {
+      map.set(name, seriesChangePct(scenarioSeries(runs.filter((r) => r.scenario === name), grain)));
+    }
+    return map;
+  }, [plannedScenarios, runs, grain]);
 
   if (!activeBenchmark || !progression) {
     return (
@@ -396,13 +414,16 @@ export function HomePage({ onOpenScenario }: { onOpenScenario: (scenario: string
               return (
                 <div key={name} className="rounded border border-slate-700 bg-slate-900/40 p-3">
                   <div className="flex items-baseline justify-between gap-2">
-                    <button
-                      type="button"
-                      className="truncate text-left text-sm font-medium text-slate-100 hover:text-sky-400"
-                      onClick={() => onOpenScenario(name)}
-                    >
-                      {name}
-                    </button>
+                    <span className="flex min-w-0 items-baseline gap-2">
+                      <button
+                        type="button"
+                        className="truncate text-left text-sm font-medium text-slate-100 hover:text-sky-400"
+                        onClick={() => onOpenScenario(name)}
+                      >
+                        {name}
+                      </button>
+                      <ChangeBadge pct={plannedChange.get(name) ?? null} />
+                    </span>
                     <span className="shrink-0 text-xs text-slate-500">
                       {meta ? `${subcategoryLabel(meta.subcategory)} · ` : ''}PB {best} · {rankName(rank)}
                     </span>
@@ -431,33 +452,13 @@ export function HomePage({ onOpenScenario }: { onOpenScenario: (scenario: string
       </section>
 
       <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-5">
-        <h3 className="text-sm font-medium text-slate-400">所有大组对比</h3>
-        <p className="mt-1 text-xs text-slate-500">
-          各场景分数尺度差太多，没法画在同一根 Y 轴上。所以这里用的是「历史最高分 ÷ 该场景最高等级阈值」，
-          再对组内场景取平均。只涨不跌，100% = 摸到最高等级。
+        <h3 className="text-sm font-medium text-slate-400">大组对比</h3>
+        <p className="mt-1 mb-3 text-xs text-slate-500">
+          分数各轴差好几个数量级，画不到同一根轴上，所以这里量的是段位：每根轴一个大组，
+          离圆心的距离就是组内项目的平均段位。绿线是现在的位置，橙色虚线圈是目标等级。
+          列表右边那个百分比是这条曲线首尾的变化（stats 目录这段时间）。
         </p>
-        <div className="mt-3">
-          <CategoryCompareChart height={380} />
-        </div>
-        <ul className="mt-3 grid gap-2 md:grid-cols-2">
-          {progression.categories.map((category, index) => (
-            <li
-              key={category.name}
-              className="flex items-center justify-between rounded border border-slate-700 bg-slate-900/40 px-3 py-2 text-sm"
-            >
-              <span className="flex items-center gap-2">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ background: CATEGORY_PALETTE[index % CATEGORY_PALETTE.length] }}
-                />
-                <span className="text-slate-100">{category.name}</span>
-              </span>
-              <span className={category.cleared ? 'text-emerald-400' : 'text-amber-400'}>
-                {category.cleared ? '已达标' : '未达标'}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <CompareRadar height={420} onOpenScenario={onOpenScenario} />
       </section>
     </div>
   );

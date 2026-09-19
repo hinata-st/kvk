@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 
-import { scenarioSeries, splitIntoSessions, type Grain } from '../../core/aggregate';
+import { scenarioSeries, seriesChangePct, splitIntoSessions, type Grain } from '../../core/aggregate';
 import { scenarioLaunchUrl } from '../../core/launch';
 import { rankForScore, topThreshold } from '../../core/rank';
 import { useStore } from '../../app/store';
 import type { EChartsOption, SeriesOption } from 'echarts';
 
+import { ChangeBadge } from '../ChangeBadge';
 import { EChart } from '../EChart';
 import { seriesDataFor, tooltipFor, xAxisFor } from '../scoreAxis';
 
@@ -87,6 +88,8 @@ export function ScenarioPage({ scenario }: { scenario: string }) {
 
   const sessions = useMemo(() => splitIntoSessions(mine), [mine]);
   const recent = useMemo(() => [...mine].reverse().slice(0, TABLE_LIMIT), [mine]);
+  /** 曲线首尾变化。跟着粒度走：按局比的是第一局和最后一局，按天比的是第一天和最近一天 */
+  const changePct = useMemo(() => seriesChangePct(scenarioSeries(mine, grain)), [mine, grain]);
 
   if (mine.length === 0) {
     return (
@@ -117,6 +120,10 @@ export function ScenarioPage({ scenario }: { scenario: string }) {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-slate-100">{scenario}</h2>
+            <ChangeBadge
+              pct={changePct}
+              title={`这条${grain === 'run' ? '按局' : grain === 'session' ? '按次训练' : '按天'}曲线首尾的变化`}
+            />
             <a
               href={scenarioLaunchUrl(scenario)}
               title={`用 Steam 打开 KovaaK's 并直接进到 ${scenario}`}

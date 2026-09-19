@@ -132,59 +132,21 @@ export function scenarioSeries(runs: readonly Run[], grain: Grain): SeriesPoint[
   }));
 }
 
-export interface CategoryPoint {
-  t: Date;
-  /** 该类别内所有场景的归一化分数的算术平均，单位 % */
-  value: number;
-  /** 参与平均的场景数 */
-  scenarioCount: number;
-}
-
 /**
- * 类别对比曲线。
+ * 曲线首尾的变化百分比：+17 表示最后一个点比第一个点高 17%。
  *
- * 每个场景先算「截至当天的历史最高分 ÷ 该场景最高等级阈值」，得到百分比；
- * 再对类别内所有有阈值的场景取算术平均。结果是累积 PB 曲线，单调不减。
- *
- * 没打过的场景按 0% 计入——它确实是你在这个类别上还没拿到的部分。
+ * 说的是「画出来的这条线涨了多少」，所以换粒度会跟着变：按局比的是第一局到最后
+ * 一局，按天比的是第一天到最近一天。只有一个点、或者起点是 0（除不了）时返回 null。
  */
-export function categorySeries(
-  allRuns: readonly Run[],
-  scenarioNames: readonly string[],
-  topThresholdOf: (scenario: string) => number | null,
-  /**
-   * 起点成绩：本地逐局文件之外的既有最高分（来自 TopScores.sav）。
-   * 不传的话曲线就只反映 stats 目录还留着的那一段，那些被清掉的老成绩会被当成 0。
-   */
-  baseline?: ReadonlyMap<string, number>,
-): CategoryPoint[] {
-  const tracked = scenarioNames
-    .map((name) => ({ name, top: topThresholdOf(name) }))
-    .filter((x): x is { name: string; top: number } => x.top !== null && x.top > 0);
-
-  if (tracked.length === 0) return [];
-
-  const relevant = new Set(tracked.map((x) => x.name));
-  const running = new Map<string, number>(
-    tracked.map((x) => [x.name, Math.max(0, baseline?.get(x.name) ?? 0)]),
-  );
-  const byDay = groupByDay(allRuns.filter((r) => relevant.has(r.scenario)));
-
-  const points: CategoryPoint[] = [];
-  for (const [key, bucket] of byDay) {
-    for (const run of bucket) {
-      if (run.score > running.get(run.scenario)!) running.set(run.scenario, run.score);
-    }
-    let sum = 0;
-    for (const { name, top } of tracked) {
-      sum += (running.get(name)! / top) * 100;
-    }
-    points.push({
-      t: new Date(`${key}T00:00:00`),
-      value: sum / tracked.length,
-      scenarioCount: tracked.length,
-    });
-  }
-  return points;
+export function seriesChangePct(points: readonly SeriesPoint[]): number | null {
+  if (points.length < 2) return null;
+  return changePct(points[0]!.best, points[points.length - 1]!.best);
 }
+
+/** 首尾两个值之间的涨幅百分比。起点是 0 就没得比（除不了），返回 null。 */
+export function changePct(first: number, last: number): number | null {
+  if (first <= 0) return null;
+  return ((last - first) / first) * 100;
+}
+
 

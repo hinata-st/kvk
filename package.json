@@ -11,6 +11,7 @@
     "scan": "tsx scripts/scan-benchmarks.ts",
     "catalog": "tsx scripts/fetch-catalog.ts",
     "check-schedule": "tsx scripts/check-schedule.ts",
+    "check-radar": "tsx scripts/check-radar.ts",
     "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {

@@ -4,7 +4,7 @@ import type { CategoryStatus, ScenarioStatus } from '../core/plan';
 import { scenarioLaunchUrl } from '../core/launch';
 import type { BenchmarkRank } from '../core/types';
 
-import { CATEGORY_PALETTE } from './CategoryCompareChart';
+import { CATEGORY_PALETTE } from './palette';
 
 /** 千分位，最多两位小数 */
 const num = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });

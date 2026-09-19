@@ -5,11 +5,10 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { categorySeries } from '../src/core/aggregate';
 import { parseStatsCsv, parseStatsFileName } from '../src/core/parseStatsCsv';
 import { parseTopScores } from '../src/core/parseTopScores';
 import { computeProgression } from '../src/core/plan';
-import { topThreshold } from '../src/core/rank';
+import { buildRadar } from '../src/core/radar';
 import type { BenchmarkSnapshot, Run } from '../src/core/types';
 import { seedGroupingFor } from '../src/data/seedGroups';
 import { requireEnv } from './env';
@@ -88,20 +87,15 @@ async function main(): Promise<void> {
     );
   }
 
-  const topOf = (scenario: string) => {
-    for (const sub of snapshot.subcategories) {
-      for (const s of sub.scenarios) if (s.name === scenario) return topThreshold(s.rankMaxes);
-    }
-    return null;
-  };
-  console.log('\n大组对比曲线（最后一行的百分比，按累积 PB 平均）：');
-  for (const category of progression.categories) {
-    const scenarioNames = category.subcategories.flatMap((s) => s.scenarios.map((x) => x.scenario));
-    const points = categorySeries(runs, scenarioNames, topOf, cached);
-    const last = points[points.length - 1];
+  // 和主页那张雷达用同一个构造函数：轴上的值是组内项目的平均段位进度，外圈是最高段
+  console.log('\n大组雷达（段位进度 / 组内平均）：');
+  const radar = buildRadar({ level: 'category', progression, runs });
+  for (const spoke of radar.spokes) {
+    const rank = Math.min(snapshot.ranks.length - 1, Math.max(0, Math.floor(spoke.value)));
     console.log(
-      `    ${category.name.padEnd(18)} ${points.length} 个点   最新 ${last ? last.value.toFixed(1) : '—'}%` +
-        `   场景 ${last?.scenarioCount ?? 0} 个`,
+      `    ${spoke.name.padEnd(18)} ${spoke.value.toFixed(2)} 级 (${rankName(rank)})` +
+        `   ${spoke.clearedCount}/${spoke.scenarioCount} 达标` +
+        `   变化 ${spoke.changePct === null ? '—' : `${spoke.changePct.toFixed(1)}%`}`,
     );
   }
 }
