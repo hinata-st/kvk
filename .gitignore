@@ -1,0 +1,8 @@
+node_modules
+dist
+*.local
+*.tsbuildinfo
+.DS_Store
+public/benchmark-directory.json
+public/benchmark-catalog.json
+.shots

@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* 和 evxl.app 一致：Baloo Da 2 打头，后面留一串几何无衬线兜底。
+   中文没有对应字形，会逐字回落到系统字体（Windows 上是微软雅黑）。 */
+@theme {
+  --font-sans: "Baloo Da 2", "DM Sans", Inter, Roboto, "Segoe UI", system-ui, sans-serif;
+  /* 图里的数字也是这个字体，不是等宽；真拿不到时才退回系统等宽 */
+  --font-mono: "Baloo Da 2", "DM Sans", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
